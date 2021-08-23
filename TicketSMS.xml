@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<voicemail xmlns="http://www.innovaphone.com/xsd/voicemail6.xsd">
+<!-- =======================TicketSMS + VR KWA / AZA innosrl 10 2012=============== -->
+ <function define="Main">
+	<event type="call-end">
+		<store-cookie root="$cdpn" name="Hop.txt" value=""/>				
+		<wait sec="2"/>
+		<call name="GetDateTime" />
+		<lib-strcat string="$StartTime" string2="$MyDate" out-string="$TicketString" />
+		<lib-strcat string="$TicketString" string2="Ticket_" out-string="$TicketString" />
+		<lib-strcat string="$TicketString" string2="$Tnum" out-string="$TicketString" />
+		<lib-strcat string="$TicketString" string2="_Caller_" out-string="$TicketString" />
+		<lib-strcat string="$TicketString" string2="$cgpn" out-string="$TicketString" />
+		<lib-strcat string="$TicketString" string2="_Called_" out-string="$TicketString" />
+		<lib-strcat string="$TicketString" string2="$cdpn" out-string="$TicketString" />
+		<lib-strcat string="$TicketString" string2="_" out-string="$WorkString" />
+		<assign out="$doloop" value=""/> 
+		<while notcond="$doloop">
+			<add value="1" value2="$lCNT" out="$lCNT"/> 
+			<lib-strcat string="$WorkString" string2="$lCNT" out-string="$SaveString" />
+			<lib-strcat string="$SaveString" string2=".TXT" out-string="$SaveString" />
+			<store-getstat root="Ticket" name="$SaveString" out-error="$error" /> 
+			<switch var="$error">
+				<case equal="2">
+					<assign out="$doloop" value="True"/> 
+  				</case>
+				</switch>
+		</while>
+  		<store-getstat root="Ticket" name="/" out-error="$error" /> 
+		<if cond="$error">
+			<store-mkdir root="Ticket" name="/"/>  
+		</if>
+		<store-getstat root="$cdpn" name="Hop.txt" out-error="$error" />
+		<if notcond="$error">
+			<store-del root="$cdpn" name="Hop.txt"/>
+			<pbx-im cgpn="$cgpn" e164="$cdpn" text="$TicketString"/>
+			<call name="SendSMS" />
+			<lib-strcat string="$SaveString" string2="_END" out-string="$SaveString" />
+	        </if>
+		<store-cookie root="Ticket" name="$SaveString" value=""/>
+	</event>
+	<pbx-getcallinfo out-cgpn="$cgpn" out-leg2="$leg2" out-cdpn="$cdpn" />
+	<store-cookie root="" name="TicketNR.txt" out="$Anum"/>
+	<add value="$Anum" value2="1" out="$Tnum"/>	 	
+	<index out="$res" value="$cdpn" pos="1" size="1"/>
+	<switch var="$res">
+		<case equal="*">
+			<index out="$cdpn" value="$cdpn" pos="2" size="20"/>
+                	<store-cookie root="" name="CFU.txt" out="$CFU"/>
+ 		  	<pbx-query-obj  name="$CFU" type="cfu" out="$CTarged" />
+			<if cond="$CTarged">
+				<assign out="$cdpn" value="$CTarged"/>
+		 	</if>
+                </case>
+	</switch>
+	<store-cookie root="" name="XMLnumber.txt" out="$Xnum"/>
+	<lib-strlen out="$Xlen" string="$Xnum"/> 
+	<add value="$Xlen" value2="1" out="$Xlen"/>	 
+	<pbx-finduser-e164 e164="$cdpn" out-cn="$cn"/> 
+	<pbx-query-obj  name="$cn" type="cfnr" out="$CFNR" />
+	<index out="$Dnum" value="$CFNR" pos="$Xlen" size="20"/>
+	<call name="GetDateTime" />
+	<assign out="$StartTime" value="$MyDate"/>
+	<wait sec="1"/>
+	<store-cookie root="" name="TicketNR.txt" value="$Tnum"/>
+	<store-del root="$Dnum" name="Hop.txt"/>
+	<pbx-fwd e164="$cdpn" barge-in="false"/>
+	<assign out="$doloop" value=""/> 
+	<while notcond="$doloop">
+		<wait sec="1"/>	
+	</while>
+ </function>
+ <function define="GetDateTime">
+	<store-getstat name="NULL" out-mday="$mday" out-mon="$mon" out-year="$year" out-hour="$hour" out-min="$min" /> 
+	<lib-strlen out="$res" string="$mday"/>
+	<switch var="$res">
+		<case equal="1">
+			<lib-strcat string="0" string2="$mday" out-string="$mday" />
+  		</case>
+	</switch>
+	<lib-strlen out="$res" string="$mon"/>
+	<switch var="$res">
+		<case equal="1">
+			<lib-strcat string="0" string2="$mon" out-string="$mon" />
+  		</case>
+	</switch>
+	<lib-strlen out="$res" string="$hour"/>
+	<switch var="$res">
+		<case equal="1">
+			<lib-strcat string="0" string2="$hour" out-string="$hour" />
+  		</case>
+	</switch>
+	<lib-strlen out="$res" string="$min"/>
+	<switch var="$res">
+		<case equal="1">
+			<lib-strcat string="0" string2="$min" out-string="$min" />
+  		</case>
+	</switch>
+	<assign out="$MyDate" value=""/>
+	<lib-strcat string="$MyDate" string2="$mday" out-string="$MyDate" />
+	<lib-strcat string="$MyDate" string2="." out-string="$MyDate" />
+	<lib-strcat string="$MyDate" string2="$mon" out-string="$MyDate" />
+	<lib-strcat string="$MyDate" string2="." out-string="$MyDate" />
+	<lib-strcat string="$MyDate" string2="$year" out-string="$MyDate" />
+	<lib-strcat string="$MyDate" string2="-" out-string="$MyDate" />
+	<lib-strcat string="$MyDate" string2="$hour" out-string="$MyDate" />
+	<lib-strcat string="$MyDate" string2="." out-string="$MyDate" />
+	<lib-strcat string="$MyDate" string2="$min" out-string="$MyDate" />
+	<lib-strcat string="$MyDate" string2="_" out-string="$MyDate" />
+ </function>
+ <function define="SendSMS">
+	<store-cookie root="$cdpn" name="SMSNumber.txt" out="$SMSnumber"/>
+	<store-cookie root="$cdpn" name="SMSUser.txt" out="$SMSUser"/>
+	<store-cookie root="$cdpn" name="SMSPassword.txt" out="$SMSPassword"/>
+	<store-cookie root="" name="SMSPrefix.txt" out="$SMSPrefix"/>
+	<store-cookie root="" name="SMSprovider.txt" out="$SMSprovider"/>
+	<assign out="$SMSCallback" value=""/>
+	<assign out="$SMSText" value="$TicketString"/>
+	<lib-strcat out-string="$SMStoCall" string="$SMSPrefix" string2="$SMSNumber"/>
+	<switch var="$SMSProvider">
+		<case equal="CODEMA">
+			<exec url="http://apisms.codemaonline.com/api/sendsms/plain?user=$SMSUser&amp;password=$SMSPassword&amp;sender=$SMSCallback&amp;SMSText=$SMSText&amp;GSM=$SMStoCall"/>
+	       	</case>
+		<case equal="ARUBA">
+			<lib-strcat out-string="$SMStoCall" string="%2b39" string2="$SMStoCall"/>
+			<exec url="http://admin.sms.aruba.it/sms/send.php?user=$SMSUser&amp;pass=$SMSPassword&amp;rcpt=$SMStoCall&amp;data=$SMSText&amp;sender=$SMSCallback" />
+		</case>
+	</switch>
+ </function>
+</voicemail>
+<!-- Simple Ticketing Solution wiki-src/xml/Ticketing 1,0,0,0 (C) innovaphone AG 2010-2012 -->
